@@ -3,7 +3,7 @@ from blockchain.transaction import Transaction
 from blockchain.chain import Blockchain
 
 
-CHAIN_ID = 7770001
+CHAIN_ID = 828
 
 
 chain = Blockchain(CHAIN_ID)
@@ -97,3 +97,19 @@ print(
     "Alice nonce:",
     chain.get_account(alice.address()).nonce,
 )
+
+block = chain.add_block(
+    [transaction.to_dict()],
+    validator.address(),
+)
+
+print()
+print("=== BLOCK ===")
+print("Height:", block.height)
+print("Previous hash:", block.previous_hash)
+print("Hash:", block.hash())
+print("Validator:", block.validator)
+
+print()
+print("=== CHAIN VALID ===")
+print(chain.is_valid())

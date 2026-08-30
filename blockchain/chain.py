@@ -122,3 +122,12 @@ class Blockchain:
         self.blocks.append(block)
 
         return block
+
+    def is_valid(self):
+        for i in range(1, len(self.blocks)):
+            current = self.blocks[i]
+            previous = self.blocks[i - 1]
+            
+            if current.previous_hash != previous.hash():
+                return False
+        return True
