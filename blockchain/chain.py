@@ -36,7 +36,7 @@ class Blockchain:
     def get_account(self, address):
         return self.accounts.get(address)
 
-    def transfer(self, transaction, sender_wallet):
+    def transfer(self, transaction):
         if transaction.chain_id != self.chain_id:
             raise ValueError("Invalid chain ID")
 
@@ -61,15 +61,38 @@ class Blockchain:
         if not transaction.signature:
             raise ValueError("Transaction is not signed")
 
-        if transaction.sender != sender_wallet.address():
-            raise ValueError("Wallet does not belong to sender")
+        # Verify that the public key actually belongs
+        # to the claimed sender address.
+        import hashlib
+        import base64
 
-        if not sender_wallet.verify(
+        digest = hashlib.sha256(
+            transaction.public_key
+        ).digest()
+
+        expected_address = (
+            "PY"
+            + base64.b32encode(digest)
+            .decode()
+            .rstrip("=")[:32]
+        )
+
+        if expected_address != transaction.sender:
+            raise ValueError(
+                "Public key does not match sender"
+            )
+
+        # Verify the cryptographic signature.
+        from .wallet import Wallet
+
+        if not Wallet.verify(
+            transaction.public_key,
             transaction.signing_bytes(),
             transaction.signature,
         ):
             raise ValueError("Invalid signature")
 
+        # Apply state transition.
         sender.balance -= transaction.amount
         recipient.balance += transaction.amount
 

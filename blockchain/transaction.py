@@ -6,12 +6,14 @@ class Transaction:
     def __init__(
         self,
         sender,
+        public_key,
         recipient,
         amount,
         nonce,
         chain_id,
     ):
         self.sender = sender
+        self.public_key = public_key
         self.recipient = recipient
         self.amount = amount
         self.nonce = nonce
@@ -21,6 +23,7 @@ class Transaction:
     def to_dict(self, include_signature=True):
         data = {
             "sender": self.sender,
+            "public_key": self.public_key.hex(),
             "recipient": self.recipient,
             "amount": self.amount,
             "nonce": self.nonce,
@@ -33,7 +36,9 @@ class Transaction:
         return data
 
     def signing_bytes(self):
-        data = self.to_dict(include_signature=False)
+        data = self.to_dict(
+            include_signature=False
+        )
 
         encoded = json.dumps(
             data,

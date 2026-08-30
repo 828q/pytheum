@@ -3,7 +3,7 @@ from blockchain.transaction import Transaction
 from blockchain.chain import Blockchain
 
 
-CHAIN_ID = 828
+CHAIN_ID = 7770001
 
 
 chain = Blockchain(CHAIN_ID)
@@ -24,12 +24,22 @@ chain.create_account(
 
 
 print("=== BEFORE ===")
-print("Alice:", chain.get_account(alice.address()).balance, "PY")
-print("Bob:", chain.get_account(bob.address()).balance, "PY")
+print(
+    "Alice:",
+    chain.get_account(alice.address()).balance,
+    "PY",
+)
+
+print(
+    "Bob:",
+    chain.get_account(bob.address()).balance,
+    "PY",
+)
 
 
 transaction = Transaction(
     sender=alice.address(),
+    public_key=alice.public_key_bytes(),
     recipient=bob.address(),
     amount=100,
     nonce=0,
@@ -42,14 +52,29 @@ transaction.signature = alice.sign(
 )
 
 
-chain.transfer(
-    transaction,
-    alice,
-)
+chain.transfer(transaction)
 
 
 print()
 print("=== AFTER ===")
-print("Alice:", chain.get_account(alice.address()).balance, "PY")
-print("Bob:", chain.get_account(bob.address()).balance, "PY")
-print("Alice nonce:", chain.get_account(alice.address()).nonce)
+
+print(
+    "Alice:",
+    chain.get_account(alice.address()).balance,
+    "PY",
+)
+
+print(
+    "Bob:",
+    chain.get_account(bob.address()).balance,
+    "PY",
+)
+
+print(
+    "Alice nonce:",
+    chain.get_account(alice.address()).nonce,
+)
+
+print()
+print("Transaction hash:")
+print(transaction.hash())
