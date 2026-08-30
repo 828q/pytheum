@@ -113,3 +113,10 @@ print("Validator:", block.validator)
 print()
 print("=== CHAIN VALID ===")
 print(chain.is_valid())
+
+print()
+print("=== TAMPER TEST ===")
+
+block.transactions[0]["amount"] = 999
+
+print("Chain valid after tampering:", chain.is_valid())

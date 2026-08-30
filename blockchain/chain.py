@@ -127,7 +127,11 @@ class Blockchain:
         for i in range(1, len(self.blocks)):
             current = self.blocks[i]
             previous = self.blocks[i - 1]
-            
-            if current.previous_hash != previous.hash():
-                return False
+
+        if current.previous_hash != previous.hash():
+            return False
+
+        if current.calculate_hash() != current.hash():
+            return False
+
         return True
