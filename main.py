@@ -1,12 +1,31 @@
 from blockchain.wallet import Wallet
 from blockchain.transaction import Transaction
+from blockchain.chain import Blockchain
 
 
 CHAIN_ID = 828
 
 
+chain = Blockchain(CHAIN_ID)
+
 alice = Wallet()
 bob = Wallet()
+
+
+chain.create_account(
+    alice.address(),
+    1000,
+)
+
+chain.create_account(
+    bob.address(),
+    500,
+)
+
+
+print("=== BEFORE ===")
+print("Alice:", chain.get_account(alice.address()).balance, "PY")
+print("Bob:", chain.get_account(bob.address()).balance, "PY")
 
 
 transaction = Transaction(
@@ -23,23 +42,14 @@ transaction.signature = alice.sign(
 )
 
 
-print("Pytheum Started!")
-print()
+chain.transfer(
+    transaction,
+    alice,
+)
 
-print("Alice:")
-print(alice.address())
-
-print()
-
-print("Bob:")
-print(bob.address())
 
 print()
-
-print("Transaction:")
-print(transaction.to_dict())
-
-print()
-
-print("Transaction hash:")
-print(transaction.hash())
+print("=== AFTER ===")
+print("Alice:", chain.get_account(alice.address()).balance, "PY")
+print("Bob:", chain.get_account(bob.address()).balance, "PY")
+print("Alice nonce:", chain.get_account(alice.address()).nonce)

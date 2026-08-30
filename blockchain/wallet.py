@@ -5,6 +5,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
 )
 
+from cryptography.exceptions import InvalidSignature
+
 
 class Wallet:
     def __init__(self):
@@ -25,3 +27,16 @@ class Wallet:
             message = message.encode()
 
         return self.private_key.sign(message).hex()
+
+    def verify(self, message, signature):
+        if isinstance(message, str):
+            message = message.encode()
+
+        try:
+            self.public_key.verify(
+                bytes.fromhex(signature),
+                message,
+            )
+            return True
+        except InvalidSignature:
+            return False
