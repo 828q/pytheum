@@ -1,26 +1,45 @@
 from blockchain.wallet import Wallet
+from blockchain.transaction import Transaction
+
+
+CHAIN_ID = 828
 
 
 alice = Wallet()
 bob = Wallet()
 
+
+transaction = Transaction(
+    sender=alice.address(),
+    recipient=bob.address(),
+    amount=100,
+    nonce=0,
+    chain_id=CHAIN_ID,
+)
+
+
+transaction.signature = alice.sign(
+    transaction.signing_bytes()
+)
+
+
 print("Pytheum Started!")
 print()
 
-print("Alice address:")
+print("Alice:")
 print(alice.address())
 
 print()
 
-print("Bob address:")
+print("Bob:")
 print(bob.address())
 
 print()
 
-message = "Hello Pytheum"
+print("Transaction:")
+print(transaction.to_dict())
 
-signature = alice.sign(message)
+print()
 
-print("Alice signed a message.")
-print("Signature:")
-print(signature.hex())
+print("Transaction hash:")
+print(transaction.hash())
