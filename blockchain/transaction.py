@@ -1,5 +1,6 @@
 import hashlib
 import json
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 
 class Transaction:
@@ -50,6 +51,20 @@ class Transaction:
         ).encode()
 
         return encoded
+
+    def verify_signature(self):
+        if self.signature is None:
+            return False
+
+        try:
+            public_key = Ed25519PublicKey.from_public_bytes(self.public_key)
+            public_key.verify(
+                self.signature,
+                self.signing_bytes(),
+            )
+            return True
+        except Exception:
+            return False
 
     def hash(self):
         return hashlib.sha256(
