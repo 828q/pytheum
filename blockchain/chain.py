@@ -86,13 +86,7 @@ class Blockchain:
             )
 
         # Verify the cryptographic signature.
-        from .wallet import Wallet
-
-        if not Wallet.verify(
-            transaction.public_key,
-            transaction.signing_bytes(),
-            transaction.signature,
-        ):
+        if not transaction.verify_signature():
             raise ValueError("Invalid signature")
 
         validator_account = self.get_account(validator)
@@ -128,10 +122,10 @@ class Blockchain:
             current = self.blocks[i]
             previous = self.blocks[i - 1]
 
-        if current.previous_hash != previous.hash():
-            return False
+            if current.previous_hash != previous.hash():
+                return False
 
-        if current.calculate_hash() != current.hash():
-            return False
+            if current.calculate_hash() != current.hash():
+                return False
 
         return True

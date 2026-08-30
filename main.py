@@ -206,3 +206,32 @@ print()
 print("=== CHAIN VALID ===")
 
 print(chain.is_valid())
+
+print()
+print("=== BAD SIGNATURE TEST ===")
+
+bad_transaction = Transaction(
+    sender=bob.address(),
+    public_key=bob.public_key_bytes(),
+    recipient=alice.address(),
+    amount=25,
+    fee=1,
+    nonce=1,
+    chain_id=CHAIN_ID,
+)
+
+# WRONG: Alice signs Bob's transaction
+bad_transaction.signature = alice.sign(
+    bad_transaction.signing_bytes()
+)
+
+try:
+    chain.transfer(
+        bad_transaction,
+        validator.address(),
+    )
+
+    print("ERROR: Bad transaction was accepted!")
+
+except ValueError as error:
+    print("Rejected:", error)
