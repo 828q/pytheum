@@ -10,6 +10,7 @@ chain = Blockchain(CHAIN_ID)
 
 alice = Wallet()
 bob = Wallet()
+validator = Wallet()
 
 
 chain.create_account(
@@ -22,8 +23,30 @@ chain.create_account(
     500,
 )
 
+chain.create_account(
+    validator.address(),
+    0,
+)
+
+
+transaction = Transaction(
+    sender=alice.address(),
+    public_key=alice.public_key_bytes(),
+    recipient=bob.address(),
+    amount=100,
+    fee=1,
+    nonce=0,
+    chain_id=CHAIN_ID,
+)
+
+
+transaction.signature = alice.sign(
+    transaction.signing_bytes()
+)
+
 
 print("=== BEFORE ===")
+
 print(
     "Alice:",
     chain.get_account(alice.address()).balance,
@@ -36,23 +59,17 @@ print(
     "PY",
 )
 
-
-transaction = Transaction(
-    sender=alice.address(),
-    public_key=alice.public_key_bytes(),
-    recipient=bob.address(),
-    amount=100,
-    nonce=0,
-    chain_id=CHAIN_ID,
+print(
+    "Validator:",
+    chain.get_account(validator.address()).balance,
+    "PY",
 )
 
 
-transaction.signature = alice.sign(
-    transaction.signing_bytes()
+chain.transfer(
+    transaction,
+    validator.address(),
 )
-
-
-chain.transfer(transaction)
 
 
 print()
@@ -71,10 +88,12 @@ print(
 )
 
 print(
+    "Validator:",
+    chain.get_account(validator.address()).balance,
+    "PY",
+)
+
+print(
     "Alice nonce:",
     chain.get_account(alice.address()).nonce,
 )
-
-print()
-print("Transaction hash:")
-print(transaction.hash())

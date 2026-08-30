@@ -9,6 +9,7 @@ class Transaction:
         public_key,
         recipient,
         amount,
+        fee,
         nonce,
         chain_id,
     ):
@@ -16,6 +17,7 @@ class Transaction:
         self.public_key = public_key
         self.recipient = recipient
         self.amount = amount
+        self.fee = fee
         self.nonce = nonce
         self.chain_id = chain_id
         self.signature = None
@@ -26,6 +28,7 @@ class Transaction:
             "public_key": self.public_key.hex(),
             "recipient": self.recipient,
             "amount": self.amount,
+            "fee": self.fee,
             "nonce": self.nonce,
             "chain_id": self.chain_id,
         }

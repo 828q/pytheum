@@ -36,7 +36,7 @@ class Blockchain:
     def get_account(self, address):
         return self.accounts.get(address)
 
-    def transfer(self, transaction):
+    def transfer(self, transaction, validator):
         if transaction.chain_id != self.chain_id:
             raise ValueError("Invalid chain ID")
 
@@ -55,7 +55,10 @@ class Blockchain:
         if transaction.amount <= 0:
             raise ValueError("Amount must be greater than zero")
 
-        if sender.balance < transaction.amount:
+        if transaction.fee < 0:
+            raise ValueError("Fee cannot be negative")
+
+        if sender.balance < transaction.amount + transaction.fee:
             raise ValueError("Insufficient balance")
 
         if not transaction.signature:
@@ -92,9 +95,15 @@ class Blockchain:
         ):
             raise ValueError("Invalid signature")
 
-        # Apply state transition.
-        sender.balance -= transaction.amount
+        validator_account = self.get_account(validator)
+
+        if validator_account is None:
+            raise ValueError("Validator account does not exist")
+
+        total_cost = transaction.amount + transaction.fee
+        sender.balance -= total_cost
         recipient.balance += transaction.amount
+        validator_account.balance += transaction.fee
 
         sender.nonce += 1
 
