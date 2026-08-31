@@ -132,8 +132,18 @@ print(
 # POS PRODUCES BLOCK 1
 # ============================================================
 
+selected_validator = chain.select_validator()
+
+if selected_validator == alice.address():
+    validator_wallet = alice
+elif selected_validator == bob.address():
+    validator_wallet = bob
+else:
+    raise ValueError("Validator wallet not found")
+
 block1 = chain.produce_block(
     [transaction1],
+    validator_wallet,
 )
 
 
@@ -144,6 +154,14 @@ print("Height:", block1.height)
 print("Previous hash:", block1.previous_hash)
 print("Hash:", block1.hash())
 print("Validator:", block1.validator)
+
+print(
+    "Validator balance:",
+    chain.get_account(
+        block1.validator
+    ).balance,
+    "PY",
+)
 
 
 print()
@@ -192,10 +210,19 @@ transaction2.signature = bob.sign(
 # POS PRODUCES BLOCK 2
 # ============================================================
 
+selected_validator = chain.select_validator()
+
+if selected_validator == alice.address():
+    validator_wallet = alice
+elif selected_validator == bob.address():
+    validator_wallet = bob
+else:
+    raise ValueError("Validator wallet not found")
+
 block2 = chain.produce_block(
     [transaction2],
+    validator_wallet,
 )
-
 
 print()
 print("=== BLOCK 2 ===")
@@ -262,8 +289,18 @@ bad_transaction.signature = alice.sign(
 
 
 try:
+    selected_validator = chain.select_validator()
+
+    if selected_validator == alice.address():
+        validator_wallet = alice
+    elif selected_validator == bob.address():
+        validator_wallet = bob
+    else:
+        raise ValueError("Validator wallet not found")
+
     chain.produce_block(
         [bad_transaction],
+        validator_wallet,
     )
 
     print("ERROR: Bad transaction was accepted!")

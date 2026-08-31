@@ -1,7 +1,10 @@
+import hashlib
+
 from .block import Block
 from .account import Account
-import random
 
+
+BLOCK_REWARD = 10
 
 class Blockchain:
     def __init__(self, chain_id):
@@ -10,11 +13,13 @@ class Blockchain:
         self.accounts = {}
 
         genesis = Block(
-            height=0,
-            previous_hash="0" * 64,
-            transactions=[],
-            validator="PYGENESIS",
-        )
+        height=0,
+        previous_hash="0" * 64,
+        transactions=[],
+        validator="PYGENESIS",
+        validator_public_key="",
+        validator_signature=None,
+       )
 
         self.blocks.append(genesis)
 
@@ -73,41 +78,97 @@ class Blockchain:
         if not validators:
             raise ValueError("No eligible validators")
 
+        validators.sort(
+            key=lambda account: account.address
+        )
+
         total_stake = sum(
             account.staked_balance
             for account in validators
         )
 
-        selection = random.uniform(0, total_stake)
+        previous_hash = self.latest_block().hash()
+
+        seed = hashlib.sha256(
+            previous_hash.encode()
+        ).digest()
+
+        number = int.from_bytes(
+            seed,
+            "big",
+        )
+
+        selection = number % total_stake
 
         current = 0
 
         for account in validators:
             current += account.staked_balance
 
-            if selection <= current:
+            if selection < current:
                 return account.address
 
         return validators[-1].address
 
-    def produce_block(self, transactions, minimum_stake=100):
+    def reward_validator(self, validator, amount):
+            account = self.get_account(validator)
+
+            if account is None:
+                raise ValueError(
+                    "Validator account does not exist"
+                )
+                
+            if amount <= 0:
+                raise ValueError(
+                    "Reward must be greater than zero"
+                )
+                
+                account.balance += amount
+                
+                return True
+
+    def produce_block(
+        self,
+        transactions,
+        validator_wallet,
+        minimum_stake=100,
+    ):
         validator = self.select_validator(
             minimum_stake
         )
+
+        if validator_wallet.address() != validator:
+            raise ValueError(
+                "Wallet does not belong to selected validator"
+            )
 
         for transaction in transactions:
             self.transfer(
                 transaction,
                 validator,
             )
+            
+            self.reward_validator(
+                validator,
+                BLOCK_REWARD,
+            )
 
-        block = self.add_block(
+        block = self.create_unsigned_block(
             [
                 transaction.to_dict()
                 for transaction in transactions
             ],
             validator,
+            validator_wallet.public_key_bytes().hex(),
         )
+
+        block.validator_signature = validator_wallet.sign(
+            block.signing_bytes()
+        )
+
+        block.block_hash = block.calculate_hash()
+
+        self.blocks.append(block)
 
         return block
 
@@ -178,7 +239,29 @@ class Blockchain:
 
         return True
 
-    def add_block(self, transactions, validator):
+    def create_unsigned_block(
+        self,
+        transactions,
+        validator,
+        validator_public_key,
+    ):
+        previous = self.latest_block()
+
+        return Block(
+            height=previous.height + 1,
+            previous_hash=previous.hash(),
+            transactions=transactions,
+            validator=validator,
+            validator_public_key=validator_public_key,
+        )
+
+    def add_block(
+        self,
+        transactions,
+        validator,
+        validator_public_key="",
+        validator_signature=None,
+    ):
         previous = self.latest_block()
 
         block = Block(
@@ -186,6 +269,8 @@ class Blockchain:
             previous_hash=previous.hash(),
             transactions=transactions,
             validator=validator,
+            validator_public_key=validator_public_key,
+            validator_signature=validator_signature,
         )
 
         self.blocks.append(block)
@@ -201,6 +286,50 @@ class Blockchain:
                 return False
 
             if current.calculate_hash() != current.hash():
+                return False
+
+            if not current.validator_public_key:
+                return False
+
+            if not current.validator_signature:
+                return False
+
+            import hashlib
+            import base64
+            
+            digest = hashlib.sha256(
+                bytes.fromhex(current.validator_public_key)
+                ).digest()
+                
+            expected_validator = (
+                "PY"
+                + base64.b32encode(digest)
+                .decode()
+                .rstrip("=")[:32]
+            )
+
+            if expected_validator != current.validator:
+                return False
+
+            try:
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                    Ed25519PublicKey,
+                )
+
+                public_key = Ed25519PublicKey.from_public_bytes(
+                    bytes.fromhex(
+                        current.validator_public_key
+                    )
+                )
+
+                public_key.verify(
+                    bytes.fromhex(
+                        current.validator_signature
+                    ),
+                    current.signing_bytes(),
+                )
+
+            except Exception:
                 return False
 
         return True
