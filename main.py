@@ -6,17 +6,25 @@ from blockchain.chain import Blockchain
 CHAIN_ID = 828
 
 
-# Create the blockchain
+# ============================================================
+# CREATE BLOCKCHAIN
+# ============================================================
+
 chain = Blockchain(CHAIN_ID)
 
 
-# Create wallets
+# ============================================================
+# CREATE WALLETS
+# ============================================================
+
 alice = Wallet()
 bob = Wallet()
-validator = Wallet()
 
 
-# Create accounts
+# ============================================================
+# CREATE ACCOUNTS
+# ============================================================
+
 chain.create_account(
     alice.address(),
     1000,
@@ -27,10 +35,60 @@ chain.create_account(
     500,
 )
 
-chain.create_account(
-    validator.address(),
-    0,
+
+# ============================================================
+# STAKE
+# ============================================================
+
+chain.stake(
+    alice.address(),
+    500,
 )
+
+chain.stake(
+    bob.address(),
+    200,
+)
+
+
+print("=== STAKING ===")
+
+print(
+    "Alice balance:",
+    chain.get_account(alice.address()).balance,
+    "PY",
+)
+
+print(
+    "Alice staked:",
+    chain.get_account(alice.address()).staked_balance,
+    "PY",
+)
+
+print(
+    "Bob balance:",
+    chain.get_account(bob.address()).balance,
+    "PY",
+)
+
+print(
+    "Bob staked:",
+    chain.get_account(bob.address()).staked_balance,
+    "PY",
+)
+
+
+# ============================================================
+# VALIDATORS
+# ============================================================
+
+print()
+print("=== VALIDATORS ===")
+
+validators = chain.get_validators()
+
+for validator_address in validators:
+    print(validator_address)
 
 
 # ============================================================
@@ -39,7 +97,7 @@ chain.create_account(
 # Fee = 1 PY
 # ============================================================
 
-transaction = Transaction(
+transaction1 = Transaction(
     sender=alice.address(),
     public_key=alice.public_key_bytes(),
     recipient=bob.address(),
@@ -49,12 +107,12 @@ transaction = Transaction(
     chain_id=CHAIN_ID,
 )
 
-transaction.signature = alice.sign(
-    transaction.signing_bytes()
+transaction1.signature = alice.sign(
+    transaction1.signing_bytes()
 )
 
 
-# Show balances before transaction 1
+print()
 print("=== BEFORE TRANSACTION 1 ===")
 
 print(
@@ -69,21 +127,25 @@ print(
     "PY",
 )
 
-print(
-    "Validator:",
-    chain.get_account(validator.address()).balance,
-    "PY",
+
+# ============================================================
+# POS PRODUCES BLOCK 1
+# ============================================================
+
+block1 = chain.produce_block(
+    [transaction1],
 )
 
 
-# Process transaction 1
-chain.transfer(
-    transaction,
-    validator.address(),
-)
+print()
+print("=== BLOCK 1 ===")
+
+print("Height:", block1.height)
+print("Previous hash:", block1.previous_hash)
+print("Hash:", block1.hash())
+print("Validator:", block1.validator)
 
 
-# Show balances after transaction 1
 print()
 print("=== AFTER TRANSACTION 1 ===")
 
@@ -100,31 +162,9 @@ print(
 )
 
 print(
-    "Validator:",
-    chain.get_account(validator.address()).balance,
-    "PY",
-)
-
-print(
     "Alice nonce:",
     chain.get_account(alice.address()).nonce,
 )
-
-
-# Create Block 1
-block1 = chain.add_block(
-    [transaction.to_dict()],
-    validator.address(),
-)
-
-
-print()
-print("=== BLOCK 1 ===")
-
-print("Height:", block1.height)
-print("Previous hash:", block1.previous_hash)
-print("Hash:", block1.hash())
-print("Validator:", block1.validator)
 
 
 # ============================================================
@@ -148,18 +188,22 @@ transaction2.signature = bob.sign(
 )
 
 
-# Process transaction 2
-chain.transfer(
-    transaction2,
-    validator.address(),
+# ============================================================
+# POS PRODUCES BLOCK 2
+# ============================================================
+
+block2 = chain.produce_block(
+    [transaction2],
 )
 
 
-# Create Block 2
-block2 = chain.add_block(
-    [transaction2.to_dict()],
-    validator.address(),
-)
+print()
+print("=== BLOCK 2 ===")
+
+print("Height:", block2.height)
+print("Previous hash:", block2.previous_hash)
+print("Hash:", block2.hash())
+print("Validator:", block2.validator)
 
 
 print()
@@ -178,24 +222,9 @@ print(
 )
 
 print(
-    "Validator:",
-    chain.get_account(validator.address()).balance,
-    "PY",
-)
-
-print(
     "Bob nonce:",
     chain.get_account(bob.address()).nonce,
 )
-
-
-print()
-print("=== BLOCK 2 ===")
-
-print("Height:", block2.height)
-print("Previous hash:", block2.previous_hash)
-print("Hash:", block2.hash())
-print("Validator:", block2.validator)
 
 
 # ============================================================
@@ -206,6 +235,11 @@ print()
 print("=== CHAIN VALID ===")
 
 print(chain.is_valid())
+
+
+# ============================================================
+# BAD SIGNATURE TEST
+# ============================================================
 
 print()
 print("=== BAD SIGNATURE TEST ===")
@@ -220,57 +254,19 @@ bad_transaction = Transaction(
     chain_id=CHAIN_ID,
 )
 
-# WRONG: Alice signs Bob's transaction
+
+# Alice tries to sign Bob's transaction
 bad_transaction.signature = alice.sign(
     bad_transaction.signing_bytes()
 )
 
+
 try:
-    chain.transfer(
-        bad_transaction,
-        validator.address(),
+    chain.produce_block(
+        [bad_transaction],
     )
 
     print("ERROR: Bad transaction was accepted!")
 
 except ValueError as error:
     print("Rejected:", error)
-
-print()
-print("=== STAKING TEST ===")
-
-chain.stake(
-    alice.address(),
-    500,
-)
-
-alice_account = chain.get_account(
-    alice.address()
-)
-
-print(
-    "Alice balance:",
-    alice_account.balance,
-    "PY",
-)
-
-print(
-    "Alice staked:",
-    alice_account.staked_balance,
-    "PY",
-)
-
-print()
-print("=== VALIDATORS ===")
-
-validators = chain.get_validators()
-
-for validator_address in validators:
-    print(validator_address)
-
-print()
-print("=== POS VALIDATOR SELECTION ===")
-
-selected = chain.select_validator()
-
-print("Selected validator:", selected)

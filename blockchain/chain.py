@@ -90,6 +90,27 @@ class Blockchain:
 
         return validators[-1].address
 
+    def produce_block(self, transactions, minimum_stake=100):
+        validator = self.select_validator(
+            minimum_stake
+        )
+
+        for transaction in transactions:
+            self.transfer(
+                transaction,
+                validator,
+            )
+
+        block = self.add_block(
+            [
+                transaction.to_dict()
+                for transaction in transactions
+            ],
+            validator,
+        )
+
+        return block
+
     def transfer(self, transaction, validator):
         if transaction.chain_id != self.chain_id:
             raise ValueError("Invalid chain ID")
