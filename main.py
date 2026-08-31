@@ -235,3 +235,42 @@ try:
 
 except ValueError as error:
     print("Rejected:", error)
+
+print()
+print("=== STAKING TEST ===")
+
+chain.stake(
+    alice.address(),
+    500,
+)
+
+alice_account = chain.get_account(
+    alice.address()
+)
+
+print(
+    "Alice balance:",
+    alice_account.balance,
+    "PY",
+)
+
+print(
+    "Alice staked:",
+    alice_account.staked_balance,
+    "PY",
+)
+
+print()
+print("=== VALIDATORS ===")
+
+validators = chain.get_validators()
+
+for validator_address in validators:
+    print(validator_address)
+
+print()
+print("=== POS VALIDATOR SELECTION ===")
+
+selected = chain.select_validator()
+
+print("Selected validator:", selected)

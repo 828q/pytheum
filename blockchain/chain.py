@@ -1,5 +1,6 @@
 from .block import Block
 from .account import Account
+import random
 
 
 class Blockchain:
@@ -35,6 +36,59 @@ class Blockchain:
 
     def get_account(self, address):
         return self.accounts.get(address)
+
+    def stake(self, address, amount):
+        account = self.get_account(address)
+
+        if account is None:
+            raise ValueError("Account does not exist")
+
+        if amount <= 0:
+            raise ValueError("Stake amount must be greater than zero")
+
+        if account.balance < amount:
+            raise ValueError("Insufficient balance for staking")
+
+        account.balance -= amount
+        account.staked_balance += amount
+
+        return True
+
+    def get_validators(self, minimum_stake=100):
+        validators = []
+
+        for account in self.accounts.values():
+            if account.staked_balance >= minimum_stake:
+                validators.append(account.address)
+
+        return validators
+
+    def select_validator(self, minimum_stake=100):
+        validators = []
+
+        for account in self.accounts.values():
+            if account.staked_balance >= minimum_stake:
+                validators.append(account)
+
+        if not validators:
+            raise ValueError("No eligible validators")
+
+        total_stake = sum(
+            account.staked_balance
+            for account in validators
+        )
+
+        selection = random.uniform(0, total_stake)
+
+        current = 0
+
+        for account in validators:
+            current += account.staked_balance
+
+            if selection <= current:
+                return account.address
+
+        return validators[-1].address
 
     def transfer(self, transaction, validator):
         if transaction.chain_id != self.chain_id:
